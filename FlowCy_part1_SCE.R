@@ -126,38 +126,31 @@ dir.create(workingDirectory)
 # List files
 FCSfiles <- list.files(fcsDirectory, pattern = ".fcs$", full = FALSE)
 
-# Sample datasheet
-sample_mdName <- "J1115_sample_md.xls"
-sample_md <- read_excel(path = paste(PrimaryDirectory, sample_mdName, sep = "/"), col_names = TRUE) 
-sample_md <- data.frame(sample_md)
+# # Sample datasheet
+# sample_mdName <- "J1115_sample_md.xls"
+# sample_md <- read_excel(path = paste(PrimaryDirectory, sample_mdName, sep = "/"), col_names = TRUE) 
+# sample_md <- data.frame(sample_md)
 
 
 # Get sample_ids
-FCSsampleID <- stringr::str_match(FCSfiles, pattern = "([0-9][0-9][0-9][0-9]) ([0-9][0-9][0-9])_CD8")[,2]
-sample_id <- FCSsampleID
+# FCSsampleID <- stringr::str_match(FCSfiles, pattern = "([0-9][0-9][0-9][0-9]) ([0-9][0-9][0-9][0-9]) ([0-9][0-9][0-9])")
+sample_key <- read_excel(file.choose(), col_names = TRUE)
+sample_df <- data.frame(sample_key)
+sample_df$patient_id <- as.factor(sample_df$patient_id)
+sample_df$tissue_type <- as.factor(sample_df$tissue_type)
+sample_df$condition <- as.factor(sample_df$condition)
+sample_df$sample_id <- as.factor(sample_df$sample_id)
+
+groups <- rep(levels(sample_df$condition), each = nlevels(sample_df$tissue_type))
+groups <- paste(rep(levels(sample_df$condition), each = nlevels(sample_df$tissue_type)), 
+                rep(levels(sample_df$tissue_type), time = nlevels(sample_df$condition)), sep = "_")
+
+
 
 # Define groups and panel marker_classes
-groups <- c("responder", "relapse")
-marker <- c("FSC-A", "FSC-H", "FSC-W", "SSC-A", "SSC-W", "TIGIT FITC", "Live.Dead", "CD27 PE",
-            "PD1 PE-Dazzle 594", "CD69 PerCP-Cy5.5", "CD57 PE-Cy7", "TIM3 APC",
-            "CD8 AlexaFluor 700", "CD3 APC-Fire 750", "DNAM1 BV421", "TIME")
-# Create FCS files from CSVfiles
-
-group_id <- rep(NA, length(sample_id))
-for(i in 1:length(groups)){
-  group_id[grep(groups[i], FCSfiles)] <- groups[i]
-}
-patient_id <- rep(NA, length(sample_id))
-for(i in 1:length(sample_id)){
-  #get row of corresponding Pt_id
-  pt <- paste0("Pt_",which(sample_md == sample_id[i], arr.ind = TRUE)[1])
-  patient_id[i] <- pt
-}
-# Give unique name
-fileName <- FCSfiles
-sample_key <- cbind(patient_id, sample_id, group_id, fileName)
-sample_key <- data.frame(sample_key)
-write.csv(sample_key, file = "sample_key.csv")
+marker <- c("FSC-A", "FSC-H", "FSC-W", "SSC-A", "SSC-W", "Event #", "CD28 FITC", "Live.Dead", "TCF1 PE",
+            "PD1 PE-Dazzle 594", "CD8 PerCP-Cy5.5", "Ki67 PE-Cy7", "Tbet APC",
+            "CD69 APC-R700", "CD3 APC-Fire 750", "CD127 BV421", "TIME")
 
 # Prepare panel and metadata for SCE object
 setwd(workingDirectory)
@@ -165,6 +158,7 @@ setwd(workingDirectory)
 # Create flowSet from FCSfiles
 flowSet <- read.flowSet(files = FCSfiles, path = fcsDirectory, truncate_max_range = FALSE)
 colnames(flowSet)
+length(marker) == length(colnames(flowSet))
 colnames(flowSet) <- marker
 
 # Introduce keyword $CYT = "FACS"
@@ -173,38 +167,37 @@ flowSet[[1]]@description$`$CYT` <- "FACS"
 
 # Build panel data.frame
 fcs_colname <- colnames(flowSet)
-marker_class <- c(rep("state", 5), "type", "state", "type", "type", "type", "type",
-                  "type", "state", "state", "type", "state")
+marker_class <- c(rep("state", 6), "type", "state", "type", "type", "state", "type",
+                  "type", "type", "state", "type", "state")
 
 length(marker_class) == length(fcs_colname)
 # antigen: marker_name w/o fluorochrome
 antigen <- fcs_colname
-antigen[6] <- "TIGIT"
-antigen[8] <- "CD27"
-antigen[9] <- "PD1"
-antigen[10] <- "CD69"
-antigen[11] <- "CD57"
-antigen[12] <- "TIM3"
-antigen[13] <- "CD8"
-antigen[14] <- "CD3"
-antigen[15] <- "DNAM1"
+antigen[7] <- "CD28"
+
+antigen[9] <- "TCF1"
+antigen[10] <- "PD1"
+antigen[11] <- "CD8"
+antigen[12] <- "Ki67"
+antigen[13] <- "Tbet"
+antigen[14] <- "CD69"
+antigen[15] <- "CD3"
+antigen[16] <- "CD127"
 panel <- cbind(fcs_colname, antigen, marker_class)
 panel <- as.data.frame(panel)
 all(panel$fcs_colname %in% colnames(flowSet))
 panel
 # Build md data.frame (metadata)
 file_name <- FCSfiles
-sample_id
-condition <- group_id
-patient_id
-unique_identifier <- paste(condition, patient_id, sep = "_")
-sample_id <- unique_identifier
+sample_id <- paste(sample_key$condition, sample_key$tissue_type, sample_key$patient_id, sep = "_")
+condition <- paste(sample_key$condition, sample_key$tissue_type, sep = "_")
+patient_id <- sample_key$patient_id
 
 md <- cbind(file_name, sample_id, condition, patient_id)
 md <- data.frame(md)
 md
-md$condition <- factor(md$condition, levels = c("relapse", "responder"))
-md$sample_id <- factor(md$sample_id, levels = md$sample_id[order(md$condition)])
+md$condition <- factor(md$condition)
+md$sample_id <- factor(md$sample_id)
 
 write.csv(md, file = "metadata.csv", row.names = FALSE)
 write.csv(panel, file = "panel.csv", row.names = FALSE)
@@ -216,7 +209,7 @@ head(ff@description)
 ff@description$`$SPILLOVER`
 
 comp <- ff@description$`$SPILLOVER`
-colnames(comp) <- marker[6:15]
+colnames(comp) <- marker[7:16]
 colnames(comp)
 
 for(i in 1:length(flowSet)){
@@ -226,15 +219,15 @@ for(i in 1:length(flowSet)){
 }
 
 # asinh transfomr
-cofactor <- c(rep(1,5), 200, 1000, 300, 400, 700, 1000, 250, 500, 250, 900, 1)
+cofactor <- c(rep(1,6), 2512, 2512, 3162, 6310, 2512, 1585, 1000, 1259, 1585, 1512, 1)
 names(cofactor) <- marker
-cf <- cofactor[6:15]
-names(cf) <- names(cofactor)[6:15]
+cf <- cofactor[7:16]
+names(cf) <- names(cofactor)[7:16]
 
 asinhFlowSet <- transFlowVS(flowSet, channels = names(cf), cofactors = cf)
-chs_of_interest <- colnames(flowSet)[6:15]
+chs_of_interest <- colnames(flowSet)[7:16]
 plot_aggregate(asinhFlowSet, channels = chs_of_interest, output_image = "FCSpreNormAsinh.png")
-normFlowSet <- warpSet(asinhFlowSet, stains = colnames(asinhFlowSet)[c(7, 13, 14)])
+normFlowSet <- warpSet(asinhFlowSet, stains = colnames(asinhFlowSet)[c(8, 11, 15)])
 plot_aggregate(normFlowSet, channels = chs_of_interest, output_image = "FCSpostNormAsinh.png")
 
 normFlowSet[[1]]@description$`$CYT`
