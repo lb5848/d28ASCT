@@ -77,8 +77,10 @@ plotClusterHeatmap(sce, hm2 = NULL, k = "meta8", m = NULL, cluster_anno = TRUE, 
                    draw_dend = TRUE)
 plotClusterHeatmap(sce, hm2 = NULL, k = "meta10", m = NULL, cluster_anno = TRUE, draw_freqs = TRUE,
                    draw_dend = TRUE)
+plotExprHeatmap(sce, features = type_markers(sce), k = "meta8", by = "cluster_id", fun = "mean", bars = TRUE, perc = TRUE, 
+                scale = "last")
 
-plotExprHeatmap(sce, features = type_markers(sce), k = "meta8", by = "cluster_id",  fun = "mean", scale = "last")
+plotExprHeatmap(sce, features = type_markers(sce), k = "meta8",  fun = "mean", scale = "last")
 
 plotDR(sce, dr = "UMAP", color_by = "condition") + scale_color_manual(values = c("blue", "red"))
 plotDR(sce, dr = "UMAP", color_by = "condition")
@@ -89,19 +91,18 @@ plotDR(sce, dr = "UMAP", color_by = "condition", facet_by = "condition")
 plotDR(sce, dr = "UMAP", color_by = "meta8", facet_by = "condition")
 plotDR(sce, dr = "TSNE", color_by = "condition", facet_by = "condition")
 plotDR(sce, dr = "DiffusionMap", color_by = "condition") + scale_color_manual(values = c("blue", "red"))
-markers <- c("CD27", "CD69", "PD1", "CD57", "DNAM1", "TIM3")
+markers <- c("CD28", "TCF1", "PD1", "Ki67", "Tbet", "CD69", "CD127")
 plotDR(sce, dr = "DiffusionMap", color_by = markers)
 plotDR(sce, dr = "UMAP", color_by = markers)
 plotDR(sce, dr = "TSNE", color_by = markers)
 # UMAP plot color_by = "meta8", facet_by = "sample_id"
-plot <- plotDR(sce, dr = "UMAP", color_by = "meta8", facet_by = "sample_id")
-plot$facet$params$ncol <- 3
+plot <- plotDR(sce, dr = "UMAP", color_by = "meta8", facet_by = "condition")
+plot$facet$params$ncol <- 2
 plot
-
+plotAbundances(sce, k = "meta8", by = "cluster_id", group_by = "condition")
 plot <- plotDR(sce, dr = "DiffusionMap", color_by = "meta8", facet_by = "sample_id")
 plot$facet$params$ncol <- 3
 plot
 # UMAP color_by CD27 DNAM1
-plotDR(sce, dr = "UMAP", color_by = c("CD27", "DNAM1"), facet_by = "condition")
 
 plotDR(sce, dr = "UMAP", color_by = "meta8", facet_by = "sample_id")
