@@ -64,18 +64,18 @@ ei <- sce@metadata$experiment_info
 
 (da_formula1 <- createFormula(ei, 
                               cols_fixed = "condition",
-                              cols_random = c("patient_id")))
-contrast2 <- createContrast(c(0,1,1,1,0,1))
+                              cols_random = c("patient_id", "sample_id")))
+contrast2 <- createContrast(c(0,0,1,1,1,1))
 da_res2 <- diffcyt(sce,
                    formula = da_formula1, contrast = contrast2,
                    analysis_type = "DA", method_DA = "diffcyt-DA-GLMM",
                    clustering_to_use = "meta12", verbose = TRUE, subsampling = TRUE,
-                   transform = FALSE, normalize = FALSE) 
+                   transform = FALSE, normalize = TRUE) 
 da2 <- rowData(da_res2$res)
 
 plotDiffHeatmap(sce, da2, top_n = 12, all = TRUE, fdr = FDR_cutoff)
 
-p <- plotMedExprs(sce, facet = "antigen", k = "meta8", features = "type")
+p <- plotMedExprs(sce, facet = "antigen", k = "meta12", features = "type")
 p$facet$params$ncol <- 4
 p
 
