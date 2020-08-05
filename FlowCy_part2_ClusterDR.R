@@ -63,21 +63,8 @@ sce <- runDR(sce, dr = "DiffusionMap", cells = n_cells, features = "type", assay
 save(list = ls(), file = "workspaceSCEclusterDR.rds")
 
 # Plots
-display.brewer.all(colorblindFriendly = TRUE)
-delta_area(sce)
-cdx <- type_markers(sce)
-plotMultiHeatmap(sce, k = "meta8",
-                 hm1 = cdx, hm2 = "abundances", 
-                 bars = TRUE, perc = TRUE, row_anno = FALSE)
-plotMultiHeatmap(sce, k = "meta10",
-                 hm1 = cdx, hm2 = "abundances", 
-                 bars = TRUE, perc = TRUE, row_anno = FALSE)
-
-plotClusterHeatmap(sce, hm2 = NULL, k = "meta8", m = NULL, cluster_anno = TRUE, draw_freqs = TRUE,
-                   draw_dend = TRUE)
-plotClusterHeatmap(sce, hm2 = NULL, k = "meta10", m = NULL, cluster_anno = TRUE, draw_freqs = TRUE,
-                   draw_dend = TRUE)
-plotExprHeatmap(sce, features = type_markers(sce), k = "meta8", by = "cluster_id", fun = "mean", bars = TRUE, perc = TRUE, 
+plotAbundances(sce, k = "meta20", by = "cluster_id", group_by = "condition")
+plotExprHeatmap(sce, features = type_markers(sce), k = "meta20", by = "cluster_id", fun = "mean", bars = TRUE, perc = TRUE, 
                 scale = "last")
 
 plotExprHeatmap(sce, features = type_markers(sce), k = "meta8",  fun = "mean", scale = "last")
@@ -87,7 +74,9 @@ plotDR(sce, dr = "UMAP", color_by = "condition")
 # UMAP plot color_by = "meta8", facet_by = "condition"
 plotDR(sce, dr = "UMAP", color_by = "meta8", facet_by = "condition")
 
-plotDR(sce, dr = "UMAP", color_by = "condition", facet_by = "condition")
+plot <- plotDR(sce, dr = "UMAP", color_by = "meta12", facet_by = "condition")
+plot$facet$params$ncol <- 2
+plot
 plotDR(sce, dr = "UMAP", color_by = "meta8", facet_by = "condition")
 plotDR(sce, dr = "TSNE", color_by = "condition", facet_by = "condition")
 plotDR(sce, dr = "DiffusionMap", color_by = "condition") + scale_color_manual(values = c("blue", "red"))
